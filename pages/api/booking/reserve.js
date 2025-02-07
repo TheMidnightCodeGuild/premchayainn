@@ -113,7 +113,7 @@ export default async function handler(req, res) {
     // Send email to hotel
     await transporter.sendMail({
       from: process.env.EMAIL_USERNAME,
-      to: process.env.HOTEL_EMAIL || 'mayanktilwankar.dev@gmail.com',
+      to:'hotelpremchayainn@gmail.com',
       subject: 'New Booking Received',
       html: emailContent
     });

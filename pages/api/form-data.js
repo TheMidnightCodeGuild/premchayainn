@@ -27,7 +27,7 @@ export default async function handler(req, res) {
 
     const mailOptions = {
       from: process.env.EMAIL_USERNAME, // Use your verified sender email
-      to: "mayanktilwankar.dev@gmail.com", // Recipient's email
+      to: "hotelpremchayainn@gmail.com", // Recipient's email
       subject: `New Enquiry from ${data.name}!`, // Email subject
       text: `You have received a new enquiry.\n\nName: ${data.name}\nEmail: ${data.email}\nMobile: ${data.mobile}\nMessage: ${data.message}`,
     };
