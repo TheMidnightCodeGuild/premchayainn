@@ -92,10 +92,10 @@ const Contact = () => {
                   </h2>
                   <a
                     className="text-indigo-500 text-sm sm:text-base hover:text-indigo-600"
-                    href="mailto:vakratundahomestay@gmail.com">
-                    vakratundahomestay@gmail.com
+                    href="mailto:hotelpremchayainn@gmail.com">
+                    hotelpremchayainn@gmail.com
                   </a>
-                  <p className="text-sm sm:text-base mt-2">+918085863266</p>
+                  <p className="text-sm sm:text-base mt-2">+91 9827077797</p>
                 </div>
               </div>
             </div>

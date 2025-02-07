@@ -6,6 +6,8 @@ const ContactAdminDashboard = () => {
   const [error, setError] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState('');
+  const [rooms, setRooms] = useState([]);
+  const [selectedRoom, setSelectedRoom] = useState(null);
   const [roomData, setRoomData] = useState({
     roomType: '',
     isAC: false,
@@ -35,6 +37,24 @@ const ContactAdminDashboard = () => {
     };
 
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const response = await fetch('/api/rooms/getRooms');
+        if (!response.ok) {
+          throw new Error('Failed to fetch rooms');
+        }
+        const data = await response.json();
+        setRooms(data.rooms);
+      } catch (error) {
+        console.error('Error fetching rooms:', error);
+        setError(error.message);
+      }
+    };
+
+    fetchRooms();
   }, []);
 
   useEffect(() => {
@@ -81,10 +101,70 @@ const ContactAdminDashboard = () => {
         maxOccupancy: ''
       });
 
+      // Refresh rooms list
+      const response = await fetch('/api/rooms/getRooms');
+      const data = await response.json();
+      setRooms(data.rooms);
+
       alert('Room added successfully!');
     } catch (error) {
       console.error('Error adding room:', error);
       alert('Failed to add room');
+    }
+  };
+
+  const handleDeleteRoom = async (roomId) => {
+    if (window.confirm('Are you sure you want to delete this room?')) {
+      try {
+        const res = await fetch('/api/rooms/deleteRooms', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ roomId })
+        });
+
+        if (!res.ok) {
+          throw new Error('Failed to delete room');
+        }
+
+        setRooms(rooms.filter(room => room._id !== roomId));
+        alert('Room deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting room:', error);
+        alert('Failed to delete room');
+      }
+    }
+  };
+
+  const handleEditRoom = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/rooms/editRooms', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          roomId: selectedRoom._id,
+          ...roomData
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update room');
+      }
+
+      // Update rooms list
+      const updatedRooms = rooms.map(room => 
+        room._id === selectedRoom._id ? {...room, ...roomData} : room
+      );
+      setRooms(updatedRooms);
+      setSelectedRoom(null);
+      alert('Room updated successfully!');
+    } catch (error) {
+      console.error('Error updating room:', error);
+      alert('Failed to update room');
     }
   };
 
@@ -121,8 +201,10 @@ const ContactAdminDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Add Room Section */}
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Add New Room</h2>
-          <form onSubmit={handleRoomSubmit} className="space-y-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+            {selectedRoom ? 'Edit Room' : 'Add New Room'}
+          </h2>
+          <form onSubmit={selectedRoom ? handleEditRoom : handleRoomSubmit} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <div>
@@ -218,15 +300,83 @@ const ContactAdminDashboard = () => {
               </div>
             </div>
 
-            <div className="flex justify-center pt-6">
+            <div className="flex justify-center gap-4 pt-6">
               <button
                 type="submit"
                 className="px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
               >
-                Add Room
+                {selectedRoom ? 'Update Room' : 'Add Room'}
               </button>
+              {selectedRoom && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRoom(null);
+                    setRoomData({
+                      roomType: '',
+                      isAC: false,
+                      price: '',
+                      totalRooms: '',
+                      description: '',
+                      amenities: '',
+                      maxOccupancy: ''
+                    });
+                  }}
+                  className="px-8 py-4 bg-gray-500 text-white font-semibold rounded-lg shadow-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+              )}
             </div>
           </form>
+        </div>
+
+        {/* Rooms List Section */}
+        <div className="bg-white rounded-2xl shadow-lg p-8 mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-8">All Rooms</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {rooms.map((room) => (
+              <div key={room._id} className="bg-gray-50 rounded-lg p-6 shadow hover:shadow-lg transition-shadow">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-xl font-semibold text-gray-900">{room.roomType}</h3>
+                  <button
+                    onClick={() => handleDeleteRoom(room._id)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="space-y-2 mb-4">
+                  <p className="text-gray-600">{room.description}</p>
+                  <p className="text-lg font-semibold text-blue-600">₹{room.price}/night</p>
+                  <p className="text-sm text-gray-500">
+                    {room.isAC ? 'AC' : 'Non-AC'} • Max {room.maxOccupancy} guests
+                  </p>
+                  <p className="text-sm text-gray-500">{room.totalRooms} rooms available</p>
+                  <p className="text-sm text-gray-500">Amenities: {room.amenities}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedRoom(room);
+                    setRoomData({
+                      roomType: room.roomType,
+                      isAC: room.isAC,
+                      price: room.price,
+                      totalRooms: room.totalRooms,
+                      description: room.description,
+                      amenities: room.amenities,
+                      maxOccupancy: room.maxOccupancy
+                    });
+                  }}
+                  className="w-full py-2 bg-blue-100 text-blue-700 font-medium rounded hover:bg-blue-200 transition-colors"
+                >
+                  Edit Room
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Bookings Section */}
